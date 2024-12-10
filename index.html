@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .banner {
+            background-color: #FFD966;
+            height: 200px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .total-amount-display {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .info-list {
+            margin-top: 15px;
+            list-style: none;
+            padding-left: 0;
+        }
+        .info-list li {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        .amortization-table {
+            margin-top: 20px;
+        }
+        .responsive-table {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="text-gray-900 font-sans antialiased">
+
+<section class="banner">
+    <h1 class="text-4xl font-bold text-white text-center">Calculator Tool</h1>
+</section>
+
+<section class="calculator-tabs py-12 bg-gray-100">
+    <div class="container mx-auto max-w-5xl bg-white rounded-lg shadow-md p-6 md:p-8">
+        <!-- Tabs Navigation -->
+        <div class="tabs flex flex-col sm:flex-row justify-start border-b border-gray-300 mb-6">
+            <button class="tab-button px-4 py-2 font-semibold text-gray-700 border-b-2 border-transparent hover:border-yellow-500 focus:outline-none active-tab" data-tab="investment">Investment Calculator</button>
+            <button class="tab-button px-4 py-2 font-semibold text-gray-700 border-b-2 border-transparent hover:border-yellow-500 focus:outline-none" data-tab="self-saving">Self-Saving Calculator</button>
+        </div>
+
+        <!-- Investment Calculator -->
+        <div id="investment" class="tab-content active">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="investmentStartingAmount" class="block text-sm font-medium text-gray-700">Starting Amount (RM)</label>
+                    <input type="text" id="investmentStartingAmount" placeholder="e.g., 5000" oninput="validateAndFormatInput(this)"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm px-4 py-2">
+                </div>
+                <div>
+                    <label for="investmentRateOfReturn" class="block text-sm font-medium text-gray-700">Rate of Return (%)</label>
+                    <input type="text" id="investmentRateOfReturn" placeholder="e.g., 4" oninput="validateDecimalInput(this)"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm px-4 py-2">
+                </div>
+                <div>
+                    <label for="investmentYearsToGrow" class="block text-sm font-medium text-gray-700">Years to Grow</label>
+                    <input type="text" id="investmentYearsToGrow" placeholder="e.g., 10" oninput="validateAndFormatInput(this)"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm px-4 py-2">
+                </div>
+            </div>
+            <button onclick="calculateInvestment()" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg mt-6 shadow-md hover:bg-yellow-600">
+                Calculate
+            </button>
+            <div id="investmentTotalAmountDisplay" class="total-amount-display hidden"></div>
+            <div class="chart-container mt-8">
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">Investment Balance Breakdown</h3>
+                    <canvas id="investmentPieChart"></canvas>
+                    <ul id="investmentPieDescription" class="info-list"></ul>
+                </div>
+                <div class="amortization-table responsive-table">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">Amortization Table</h3>
+                    <table class="w-full table-auto border-collapse border border-gray-300 text-sm">
+                        <thead class="bg-gray-200 text-gray-700">
+                            <tr>
+                                <th class="border border-gray-300 px-4 py-2">Year</th>
+                                <th class="border border-gray-300 px-4 py-2">Starting Amount</th>
+                                <th class="border border-gray-300 px-4 py-2">Interest Earned</th>
+                                <th class="border border-gray-300 px-4 py-2">End Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="investmentTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Self-Saving Calculator -->
+        <div id="self-saving" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="savingAdditionalContribution" class="block text-sm font-medium text-gray-700">Additional Contribution (RM)</label>
+                    <input type="text" id="savingAdditionalContribution" placeholder="e.g., 100" oninput="validateAndFormatInput(this)"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm px-4 py-2">
+                </div>
+                <div>
+                    <label for="savingRateOfReturn" class="block text-sm font-medium text-gray-700">Rate of Return (%)</label>
+                    <input type="text" id="savingRateOfReturn" placeholder="e.g., 4" oninput="validateDecimalInput(this)"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm px-4 py-2">
+                </div>
+                <div>
+                    <label for="savingYearsToGrow" class="block text-sm font-medium text-gray-700">Years to Grow</label>
+                    <input type="text" id="savingYearsToGrow" placeholder="e.g., 10" oninput="validateAndFormatInput(this)"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm px-4 py-2">
+                </div>
+            </div>
+            <button onclick="calculateSelfSaving()" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg mt-6 shadow-md hover:bg-yellow-600">
+                Calculate
+            </button>
+            <div id="savingTotalAmountDisplay" class="total-amount-display hidden"></div>
+            <div class="chart-container mt-8">
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">Savings Balance Breakdown</h3>
+                    <canvas id="savingPieChart"></canvas>
+                    <ul id="savingPieDescription" class="info-list"></ul>
+                </div>
+                <div class="amortization-table responsive-table">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">Amortization Table</h3>
+                    <table class="w-full table-auto border-collapse border border-gray-300 text-sm">
+                        <thead class="bg-gray-200 text-gray-700">
+                            <tr>
+                                <th class="border border-gray-300 px-4 py-2">Year</th>
+                                <th class="border border-gray-300 px-4 py-2">Contribution</th>
+                                <th class="border border-gray-300 px-4 py-2">Interest Earned</th>
+                                <th class="border border-gray-300 px-4 py-2">End Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savingTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Tab Switching Logic
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+        const tab = button.getAttribute('data-tab');
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('text-yellow-500', 'border-yellow-500'));
+        document.getElementById(tab).classList.add('active');
+        button.classList.add('text-yellow-500', 'border-yellow-500');
+    });
+});
+
+// Input Validation
+function validateAndFormatInput(element) {
+    element.value = element.value.replace(/[^0-9]/g, '');
+    const value = parseFloat(element.value.replace(/,/g, ''));
+    if (!isNaN(value)) element.value = value.toLocaleString('en-US');
+}
+function validateDecimalInput(element) {
+    element.value = element.value.replace(/[^0-9.]/g, '');
+}
+
+// Format numbers
+function formatNumber(value) {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Investment Calculator Logic
+function calculateInvestment() {
+    const startingAmount = parseFloat(document.getElementById('investmentStartingAmount').value.replace(/,/g, '')) || 0;
+    const rateOfReturn = parseFloat(document.getElementById('investmentRateOfReturn').value.replace(/,/g, '')) || 0;
+    const yearsToGrow = parseInt(document.getElementById('investmentYearsToGrow').value.replace(/,/g, '')) || 0;
+
+    const annualRate = rateOfReturn / 100;
+    let totalBalance = startingAmount;
+    let totalInterest = 0;
+
+    const tableBody = document.getElementById('investmentTableBody');
+    tableBody.innerHTML = ''; // Clear table
+
+    for (let year = 1; year <= yearsToGrow; year++) {
+        const interest = totalBalance * annualRate;
+        totalInterest += interest;
+        totalBalance += interest;
+
+        const row = `<tr>
+            <td class="border border-gray-300 px-4 py-2">${year}</td>
+            <td class="border border-gray-300 px-4 py-2">RM ${formatNumber(startingAmount)}</td>
+            <td class="border border-gray-300 px-4 py-2">RM ${formatNumber(interest)}</td>
+            <td class="border border-gray-300 px-4 py-2">RM ${formatNumber(totalBalance)}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    }
+
+    const totalAmountDisplay = document.getElementById('investmentTotalAmountDisplay');
+    totalAmountDisplay.innerHTML = `Total Amount: RM ${formatNumber(totalBalance)}`;
+    totalAmountDisplay.classList.remove('hidden');
+
+    const pieChartCtx = document.getElementById('investmentPieChart').getContext('2d');
+    new Chart(pieChartCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Starting Amount', 'Total Interest Earned'],
+            datasets: [{
+                data: [startingAmount, totalInterest],
+                backgroundColor: ['#36A2EB', '#FFCE56']
+            }]
+        }
+    });
+
+    const pieDescription = document.getElementById('investmentPieDescription');
+    pieDescription.innerHTML = `
+        <li><span style="color: #36A2EB">●</span> Starting Amount: RM ${formatNumber(startingAmount)}</li>
+        <li><span style="color: #FFCE56">●</span> Total Interest Earned: RM ${formatNumber(totalInterest)}</li>
+        <li><b>Total Amount: RM ${formatNumber(totalBalance)}</b></li>
+    `;
+}
+
+// Self-Saving Calculator Logic
+function calculateSelfSaving() {
+    const contribution = parseFloat(document.getElementById('savingAdditionalContribution').value.replace(/,/g, '')) || 0;
+    const rateOfReturn = parseFloat(document.getElementById('savingRateOfReturn').value.replace(/,/g, '')) || 0;
+    const yearsToGrow = parseInt(document.getElementById('savingYearsToGrow').value.replace(/,/g, '')) || 0;
+
+    const annualRate = rateOfReturn / 100;
+    let totalBalance = 0;
+    let totalInterest = 0;
+
+    const tableBody = document.getElementById('savingTableBody');
+    tableBody.innerHTML = ''; // Clear table
+
+    for (let year = 1; year <= yearsToGrow; year++) {
+        const interest = totalBalance * annualRate;
+        totalInterest += interest;
+        totalBalance += interest + contribution;
+
+        const row = `<tr>
+            <td class="border border-gray-300 px-4 py-2">${year}</td>
+            <td class="border border-gray-300 px-4 py-2">RM ${formatNumber(contribution)}</td>
+            <td class="border border-gray-300 px-4 py-2">RM ${formatNumber(interest)}</td>
+            <td class="border border-gray-300 px-4 py-2">RM ${formatNumber(totalBalance)}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    }
+
+    const totalAmountDisplay = document.getElementById('savingTotalAmountDisplay');
+    totalAmountDisplay.innerHTML = `Total Amount: RM ${formatNumber(totalBalance)}`;
+    totalAmountDisplay.classList.remove('hidden');
+
+    const pieChartCtx = document.getElementById('savingPieChart').getContext('2d');
+    new Chart(pieChartCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Total Contributions', 'Total Interest Earned'],
+            datasets: [{
+                data: [contribution * yearsToGrow, totalInterest],
+                backgroundColor: ['#36A2EB', '#FFCE56']
+            }]
+        }
+    });
+
+    const pieDescription = document.getElementById('savingPieDescription');
+    pieDescription.innerHTML = `
+        <li><span style="color: #36A2EB">●</span> Total Contributions: RM ${formatNumber(contribution * yearsToGrow)}</li>
+        <li><span style="color: #FFCE56">●</span> Total Interest Earned: RM ${formatNumber(totalInterest)}</li>
+        <li><b>Total Amount: RM ${formatNumber(totalBalance)}</b></li>
+    `;
+}
+</script>
+
+</body>
+</html>
